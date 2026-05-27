@@ -12,7 +12,7 @@
           $nameFormatted = strtolower($row['pokemon_name']);
           $nameFormatted = str_replace(['♀', '♂', "'", ' '], ['-f', '-m', '', '-'], $nameFormatted);
             
-          $pic = '<a href="https://pokemondb.net/pokedex/' . $nameFormatted . '"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/' . $nameFormatted . '.png" alt="' . $row['pokemon_name'] . '"></a>';
+          $pic = '<a href="https://pokemondb.net/pokedex/' . $nameFormatted . '"><img src="https://img.pokemondb.net/sprites/diamond-pearl/normal/' . $nameFormatted . '.png" alt="' . $row['pokemon_name'] . '"></a>';
           
           return [
             'name' =>$row['pokemon_name'],
@@ -35,7 +35,7 @@
     if (!isset($_SESSION['log'])) {
         $_SESSION['log'] = [];
     }
-    $maxLogEntries = 2;
+    $maxLogEntries = 5;
 
     if (!isset($_SESSION['catchRate'])) {
         $randomMon = getRandomPokemon();
@@ -209,10 +209,10 @@
 
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="assets/styles.css">
   </head>
   <body>
-    <center>
       <div class="safari-box">
         <?php if (!$_SESSION['gameOver']): ?>
         <form method="POST" class="gb-button-container">
@@ -229,7 +229,7 @@
 
         <div style="position: relative; width: 70%; margin: 0 auto; border: 4px solid #333; border-radius: 10px; background: #000;">
           <img src="assets/battle-back.jpg" alt="battleground" style="width: 100%; border-radius: 5px; display:block;">
-            <div class="pokemon-sprite" style="position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%);">
+            <div class="pokemon-sprite" style="position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%);">
             <?php echo $_SESSION['currentPic']; ?>
             </div>
         </div>
@@ -246,6 +246,5 @@
           <?php endforeach; ?>
         </div>
       </div>
-    </center>
   </body>
 </html>
