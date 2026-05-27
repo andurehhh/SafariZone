@@ -1,33 +1,35 @@
 <?php
 
-    $Pokemons = [
-        [
-          'name' => 'Pikachu',
-          'escapeRate' => 20,
-          'catchRate' => 15,
-          'pic' => '<a href="https://pokemondb.net/pokedex/pikachu"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/pikachu.png" alt="Pikachu"></a>'
-        ],
-        [
-          'name' => 'togepi',
-          'escapeRate' => 10,
-          'catchRate' => 45,
-          'pic' => '<a href="https://pokemondb.net/pokedex/togepi"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/togepi.png" alt="Togepi"></a>'
-        ],
-        [
-          'name' => 'Chansey',
-          'escapeRate' => 20,
-          'catchRate' => 10,
-          'pic' => '<a href="https://pokemondb.net/pokedex/chansey"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/chansey.png" alt="Chansey"></a>'
+    require_once 'db.php';
 
-        ],
-        [
-          'name' => 'Snorlax',
-          'escapeRate' => 5,
-          'catchRate' => 5,
-          'pic' => '<a href="https://pokemondb.net/pokedex/snorlax"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/snorlax.png" alt="Snorlax"></a>'
+    function getRandomPokemon() {
+        global $conn;
+        $result = mysqli_query($conn, "SELECT * FROM pokemon ORDER BY RAND() LIMIT 1");
 
-        ]
-    ];
+        if($result && mysqli_num_rows($result) > 0){
+          $row = mysqli_fetch_assoc($result);
+
+          $nameFormatted = strtolower($row['pokemon_name']);
+          $nameFormatted = str_replace(['♀', '♂', "'", ' '], ['-f', '-m', '', '-'], $nameFormatted);
+            
+          $pic = '<a href="https://pokemondb.net/pokedex/' . $nameFormatted . '"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/' . $nameFormatted . '.png" alt="' . $row['pokemon_name'] . '"></a>';
+          
+          return [
+            'name' =>$row['pokemon_name'],
+            'catchRate' =>$row['catch_rate'],
+            'escapeRate' =>$row['escape_rate'],
+            'pic'=> $pic
+          ];
+        }
+        // Fallback if the database is empty or connection fails
+        return [
+            'name' => 'Pikachu',
+            'catchRate' => 15,
+            'escapeRate' => 20,
+            'pic' => '<a href="https://pokemondb.net/pokedex/pikachu"><img src="https://img.pokemondb.net/sprites/ruby-sapphire/normal/pikachu.png" alt="Pikachu"></a>'
+        ];
+    }
+    
 
     session_start();
     if (!isset($_SESSION['log'])) {
@@ -36,10 +38,10 @@
     $maxLogEntries = 2;
 
     if (!isset($_SESSION['catchRate'])) {
-        $randomMon = rand(0,count($Pokemons)-1);
-        $_SESSION['currentPic'] = $Pokemons[$randomMon]['pic'];
-        $_SESSION['baseCatchRate'] = $Pokemons[$randomMon]['catchRate'];
-        $_SESSION['baseEscapeRate'] = $Pokemons[$randomMon]['escapeRate'];
+        $randomMon = getRandomPokemon();
+        $_SESSION['currentPic'] = $randomMon['pic'];
+        $_SESSION['baseCatchRate'] = $randomMon['catchRate'];
+        $_SESSION['baseEscapeRate'] = $randomMon['escapeRate'];
         $_SESSION['catchThreshold'] = 10;
         $_SESSION['escapeThreshold'] = 10;
         $_SESSION['state'] = 'neutral';
@@ -63,7 +65,7 @@
         $roll = rand(1,100);
         if($roll <= $_SESSION['catchRate']){
           array_push($_SESSION['log'],"gotcha! the pokemon was caught. Roll:$roll");
-          $_SESSION['currentPic'] = '<img src="https://img.pokemondb.net/sprites/items/poke-ball.png" alt="Pokeball">';
+          $_SESSION['currentPic'] = '<img src="https://img.pokemondb.net/sprites/items/safari-ball.png" alt="Pokeball">';
           $_SESSION['gameOver'] = true;
         }
         else{
@@ -126,12 +128,10 @@
 
         //restart game
     function restartGame(){
-        global $Pokemons;
-
-        $randomMon = rand(0,count($Pokemons));
-        $_SESSION['currentPic'] = $Pokemons[$randomMon]['pic'];
-        $_SESSION['baseCatchRate'] = $Pokemons[$randomMon]['catchRate'];
-        $_SESSION['baseEscapeRate'] = $Pokemons[$randomMon]['escapeRate'];
+        $randomMon = getRandomPokemon();
+        $_SESSION['currentPic'] = $randomMon['pic'];
+        $_SESSION['baseCatchRate'] = $randomMon['catchRate'];
+        $_SESSION['baseEscapeRate'] = $randomMon['escapeRate'];
         $_SESSION['catchRate'] = $_SESSION['baseCatchRate'];
         $_SESSION['escapeRate'] = $_SESSION['baseEscapeRate'];
         $_SESSION['catchThreshold'] = 10;
@@ -208,53 +208,43 @@
     ?>
 
 <html>
+  <head>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
   <body>
     <center>
-      <div
-        style="
-          box-shadow: 0px 10px 30px grey;
-          min-height: none;
-          min-width: none;
-          height: 500px;
-          width: 400px;
-          background-color: greenyellow;
-          padding: 20px;
-          box-sizing: border-box;
-        "
-      >
+      <div class="safari-box">
         <?php if (!$_SESSION['gameOver']): ?>
-        <form method="POST">
-          <button type="submit" name="bait" value="bait">Throw Bait</button>
-          <button type="submit" name="catch" value="catch">Throw Pokeball</button>
-          <button type="submit" name="rock" value="rock">Throw Rock</button>
+        <form method="POST" class="gb-button-container">
+          <button type="submit" name="bait" value="bait" class="gb-button">Bait</button>
+          <button type="submit" name="catch" value="catch" class="gb-button">Poke<br>ball</button>
+          <button type="submit" name="rock" value="rock" class="gb-button">Rock</button>
         </form>
         <?php else: ?>
-        <div style="margin-bottom:10px; font-weight:bold;">Finished! Use reset to play again.</div>
-        <form method="POST">
-          <button type="submit" name="reset" value="reset">RESET</button>
+        <div style="margin-bottom:10px; font-weight:bold; color: white; text-shadow: 1px 1px 2px #000;">Finished! Use reset to play again.</div>
+        <form method="POST" class="gb-button-container" style="transform: none;">
+          <button type="submit" name="reset" value="reset" class="gb-button reset-btn">RESET</button>
         </form>
         <?php endif; ?>
 
-        <div style="position: relative; width: 70%; margin: 0 auto;">
-          <img src="assets/battle-back.jpg" alt="battleground" style="max-width: 70%; border-radius: 10px; display:block;">
-            <div style="position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%);">
+        <div style="position: relative; width: 70%; margin: 0 auto; border: 4px solid #333; border-radius: 10px; background: #000;">
+          <img src="assets/battle-back.jpg" alt="battleground" style="width: 100%; border-radius: 5px; display:block;">
+            <div class="pokemon-sprite" style="position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%);">
             <?php echo $_SESSION['currentPic']; ?>
             </div>
         </div>
-        <div style="margin:10px 0; color:#000;">
+        <div class="stats-text">
           Catch rate: <?php echo htmlspecialchars($_SESSION['catchRate']); ?><br>
           Escape rate: <?php echo htmlspecialchars($_SESSION['escapeRate']); ?><br>
           State: <?php echo htmlspecialchars($_SESSION['state']); ?><br>
           Turns: <?php echo htmlspecialchars($_SESSION['stateDuration']); ?>
-
-
         </div>
 
-        <div class="logs" style="overflow:auto; max-height:150px; width:100%; padding:10px; background:#fff; color:#000; box-sizing:border-box;">
+        <div class="logs" style="overflow:auto; max-height:150px; width:90%; padding:10px; background:#fff; color:#000; box-sizing:border-box; border-radius: 10px; border: 3px solid #333; text-align: left; font-size: 14px;">
           <?php foreach ($_SESSION['log'] as $entry): ?>
-            <p style="margin:4px 0; word-break:break-word;"><?php echo htmlspecialchars($entry); ?></p>
+            <p style="margin:4px 0; word-break:break-word; border-bottom: 1px dashed #ccc; padding-bottom: 4px;"><?php echo htmlspecialchars($entry); ?></p>
           <?php endforeach; ?>
-
+        </div>
       </div>
     </center>
   </body>
